@@ -1,0 +1,62 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Net;
+using System.Net.Sockets;
+using System.IO;
+
+namespace ServidorRecebe
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Socket socketreceber = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.IP);
+            EndPoint endereco = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9060);
+            byte[] data = new byte[1024];
+            int qtdbytes, qtd, somatoria;
+            String filename;
+
+
+            socketreceber.Bind(endereco);
+            qtdbytes = socketreceber.ReceiveFrom(data, ref endereco);
+            Console.WriteLine(Encoding.ASCII.GetString(data, 0, qtdbytes));
+            filename = Encoding.ASCII.GetString(data, 0, qtdbytes);
+
+            qtdbytes = socketreceber.ReceiveFrom(data, ref endereco);
+            Console.WriteLine(Encoding.ASCII.GetString(data, 0, qtdbytes));
+            qtd = int.Parse(Encoding.ASCII.GetString(data, 0, qtdbytes));
+
+            FileStream outfile;
+
+            outfile = new System.IO.FileStream(filename,
+                                               System.IO.FileMode.Create,
+                                               System.IO.FileAccess.Write);
+
+            int calculado = 0;
+            for (int i = 0; i < qtd; i++)
+            {
+                qtdbytes = socketreceber.ReceiveFrom(data, ref endereco);
+                Console.WriteLine(Encoding.ASCII.GetString(data, 0, qtdbytes));
+                for (int j = 0; j < qtdbytes; ++j)
+                {
+                    calculado += data[j];
+                }
+                qtdbytes = socketreceber.ReceiveFrom(data, ref endereco);
+                Console.WriteLine(Encoding.ASCII.GetString(data, 0, qtdbytes));
+                somatoria = int.Parse(Encoding.ASCII.GetString(data, 0, qtdbytes));
+                if (calculado != somatoria) Console.WriteLine("Erro!!!");
+                for (int j = 0; j < qtdbytes; ++j)
+                {
+                    outfile.WriteByte((byte)data[j]);
+                }
+                calculado = 0;
+            }
+            outfile.Close();
+            socketreceber.Close();
+            Console.ReadKey();
+        }
+    }
+}
+
